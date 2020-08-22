@@ -51,18 +51,33 @@ func main() {
 		caughtSig = true
 	}()
 
+	doneRendering := make(chan [][]rune, 1)
+
+	go func() {
+		for {
+			if caughtSig {
+				break
+			}
+			select {
+			case output := <-doneRendering:
+				printOutput(output)
+			}
+		}
+	}()
+
 	for {
-		render(a, b)
+		runes := renderToRunes(a, b)
 		if caughtSig {
 			break
 		}
+		doneRendering <- runes
 		a += .04
 		b += .02
 		time.Sleep(10 * time.Millisecond)
 	}
 }
 
-func render(a, b float64) {
+func renderToRunes(a, b float64) [][]rune {
 	width, height := screenSize()
 
 	output := make([][]rune, width)
@@ -118,7 +133,7 @@ func render(a, b float64) {
 		}
 	}
 
-	printOutput(output)
+	return output
 }
 
 func printOutput(output [][]rune) {
