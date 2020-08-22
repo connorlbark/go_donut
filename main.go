@@ -5,8 +5,10 @@ import (
 	"math"
 	"os"
 	"os/exec"
+	"os/signal"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 )
 
@@ -39,8 +41,21 @@ func main() {
 	a := 0.0
 	b := 0.0
 
+	sigs := make(chan os.Signal, 1)
+	caughtSig := false
+
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		<-sigs
+		caughtSig = true
+	}()
+
 	for {
 		render(a, b)
+		if caughtSig {
+			break
+		}
 		a += .04
 		b += .02
 		time.Sleep(10 * time.Millisecond)
